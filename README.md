@@ -45,7 +45,7 @@ c c c c c
 c c c c c 
 ```
 
-Which is 20 crops, close to the optimal 21 crops. This current best guess does not scale however. If we could figure out the optimal number of crops before starting this run then it would help tremendousely, as all the program would have to do at that point is try placing them.
+Which is 20 crops, close to the optimal 21 crops.
 
 ### Results
 
@@ -77,3 +77,37 @@ x x x x x c
 c c c c c c
 c c c c c c
 ```
+
+This current best guess does not scale however. If we could figure out the optimal number of crops before starting this run then it would help tremendousely, as all the program would have to do at that point is try placing them. After figuring out the optimal placement had 28 crops in a 6x6, I just made the best guess function return 28 to see the speed improvements. It went from taking 7m37 to JUST 2 SECONDS. Picking a number greater than 28 stops in less than 2 seconds with an incomplete board.
+
+```
+Search took 2.5670386s with 8 workers; chunking 5000
+Explored 2102643 solutions
+Total Crops: 28
+
+c c c x c c
+x c c x c c
+c c c x c c
+x x c x c c
+c c c x c c
+c c c c c c
+```
+
+I took this and hard coded the guess to 40 for a 7x7 board. The board never finishes so I'd knock down the hard coded guess by one until the board finished. As a result I finally got a valid board with 12 minutes of runtime.
+
+7x7
+```
+Search took 12m17.9270004s with 8 workers; chunking 5000
+Explored 547254570 solutions
+Total Crops: 37
+
+c c x c x c c
+c c x c x x c
+c c x c c c c
+c c x c c c c
+c x x x x x c
+c c c c c c c
+c c c c c c c
+```
+
+From this we see that even if we know the optimal number of crops for any board, coming up with a valid configuration will still take way too much time on larger boards. Which warrants the need for better strategies to be implemented along with this.

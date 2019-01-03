@@ -50,36 +50,37 @@ scarecrow
 		    . . . . . . . . .
 */
 
-const FARM_WIDTH = 5
-const FARM_HEIGHT = 5
+const FARM_WIDTH = 6
+const FARM_HEIGHT = 6
 
 var MINIMUM_CROPS = basicStrategy(FARM_WIDTH, FARM_HEIGHT)
 
 const WORKERS = 8
 
-const CHUNKING = 5000
+const CHUNKING = 10
 
 const FARM_SIZE = FARM_WIDTH * FARM_HEIGHT
 
 // basicStrategy is a way for getting an easy estimate for the minimum number
 // of crops that should be on the farm
 func basicStrategy(width int, height int) int {
-	greaterSide := width
-	lesserSide := height
-	if height > width {
-		greaterSide, lesserSide = height, width
-	}
+	return 28
+	// greaterSide := width
+	// lesserSide := height
+	// if height > width {
+	// 	greaterSide, lesserSide = height, width
+	// }
 
-	var crops int
-	if lesserSide%3 == 0 {
-		crops = greaterSide * (lesserSide / 3) * 2
-	} else if lesserSide%3 == 1 {
-		crops = (greaterSide * int(math.Floor(float64(lesserSide)/3.0)) * 2) + greaterSide
-	} else if lesserSide%3 == 2 {
-		crops = (greaterSide * int(math.Ceil(float64(lesserSide)/3.0)) * 2)
-	}
+	// var crops int
+	// if lesserSide%3 == 0 {
+	// 	crops = greaterSide * (lesserSide / 3) * 2
+	// } else if lesserSide%3 == 1 {
+	// 	crops = (greaterSide * int(math.Floor(float64(lesserSide)/3.0)) * 2) + greaterSide
+	// } else if lesserSide%3 == 2 {
+	// 	crops = (greaterSide * int(math.Ceil(float64(lesserSide)/3.0)) * 2)
+	// }
 
-	return crops
+	// return crops
 }
 
 func coordinatesFromIndex(width int, height int, index int) (int, int) {
