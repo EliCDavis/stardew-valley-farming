@@ -50,15 +50,37 @@ scarecrow
 		    . . . . . . . . .
 */
 
-const FARM_WIDTH = 6
+const FARM_WIDTH = 5
+const FARM_HEIGHT = 5
 
-const FARM_HEIGHT = 6
+var MINIMUM_CROPS = basicStrategy(FARM_WIDTH, FARM_HEIGHT)
 
 const WORKERS = 8
 
 const CHUNKING = 5000
 
 const FARM_SIZE = FARM_WIDTH * FARM_HEIGHT
+
+// basicStrategy is a way for getting an easy estimate for the minimum number
+// of crops that should be on the farm
+func basicStrategy(width int, height int) int {
+	greaterSide := width
+	lesserSide := height
+	if height > width {
+		greaterSide, lesserSide = height, width
+	}
+
+	var crops int
+	if lesserSide%3 == 0 {
+		crops = greaterSide * (lesserSide / 3) * 2
+	} else if lesserSide%3 == 1 {
+		crops = (greaterSide * int(math.Floor(float64(lesserSide)/3.0)) * 2) + greaterSide
+	} else if lesserSide%3 == 2 {
+		crops = (greaterSide * int(math.Ceil(float64(lesserSide)/3.0)) * 2)
+	}
+
+	return crops
+}
 
 func coordinatesFromIndex(width int, height int, index int) (int, int) {
 	return index % width, int(math.Floor(float64(index) / float64(height)))
@@ -78,6 +100,10 @@ func validLayout(width int, height int, layout []byte) bool {
 
 	cropsToWater := 0
 
+	queue := make([]int, 1) // (biggerWidth*2)+(biggerHeight*2)-8
+	queue[0] = 0
+	walkingSpaces := 0
+
 	// Building the new board...
 	for i := 0; i < biggerSize; i++ {
 		x, y := coordinatesFromIndex(biggerWidth, biggerHeight, i)
@@ -89,6 +115,10 @@ func validLayout(width int, height int, layout []byte) bool {
 				cropsToWater++
 			}
 
+			if temp[i] == 'x' {
+				walkingSpaces++
+			}
+
 			// Just go ahead and fill in everything as walkable
 			if temp[i] == '.' {
 				temp[i] = 'x'
@@ -96,10 +126,11 @@ func validLayout(width int, height int, layout []byte) bool {
 		}
 	}
 
-	cropsWatered := 0
+	if FARM_SIZE-walkingSpaces < MINIMUM_CROPS {
+		return false
+	}
 
-	queue := make([]int, 1)
-	queue[0] = 0
+	cropsWatered := 0
 
 	visited := make([]bool, biggerSize)
 	for i := 0; i < biggerSize; i++ {
@@ -170,27 +201,29 @@ func validLayout(width int, height int, layout []byte) bool {
 var basicOptions = []byte{'x', 'c'}
 
 func expand(farm *Farm) []*Farm {
-	expansion := make([]*Farm, 0)
-
-	options := append(basicOptions, farm.remainingResources.Options()...)
 
 	for layoutIndex, layoutSelection := range farm.layout {
 
 		if layoutSelection == '.' {
+
+			options := append(basicOptions, farm.remainingResources.Options()...)
+			expansion := make([]*Farm, len(options))
+			added := 0
+
 			for _, option := range options {
 				newLayout := make([]byte, FARM_SIZE)
 				copy(newLayout, farm.layout)
 				newLayout[layoutIndex] = option
 				if layoutIndex < (FARM_WIDTH*2)+2 || validLayout(FARM_WIDTH, FARM_HEIGHT, newLayout) {
-					expansion = append(expansion, NewFarm(farm.remainingResources, newLayout))
+					expansion[added] = NewFarm(farm.remainingResources, newLayout)
+					added++
 				}
 			}
-			return expansion
+			return expansion[:added]
 		}
-
 	}
 
-	return expansion
+	return nil
 }
 
 func worker(id int, jobs <-chan []*Farm, results chan<- []*Farm) {
@@ -213,7 +246,7 @@ func main() {
 
 	start := time.Now()
 
-	jobs := make(chan []*Farm, 10000)
+	jobs := make(chan []*Farm, 10000000)
 	jobs <- expand(farm)
 	outstanding := 1
 
