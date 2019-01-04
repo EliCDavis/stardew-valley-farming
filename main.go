@@ -50,21 +50,21 @@ scarecrow
 		    . . . . . . . . .
 */
 
-const FARM_WIDTH = 6
-const FARM_HEIGHT = 6
+const FARM_WIDTH = 7
+const FARM_HEIGHT = 7
 
 var MINIMUM_CROPS = basicStrategy(FARM_WIDTH, FARM_HEIGHT)
 
 const WORKERS = 8
 
-const CHUNKING = 10
+const CHUNKING = 5000
 
 const FARM_SIZE = FARM_WIDTH * FARM_HEIGHT
 
 // basicStrategy is a way for getting an easy estimate for the minimum number
 // of crops that should be on the farm
 func basicStrategy(width int, height int) int {
-	return 28
+	return 37
 	// greaterSide := width
 	// lesserSide := height
 	// if height > width {
@@ -101,15 +101,22 @@ func validLayout(width int, height int, layout []byte) bool {
 
 	cropsToWater := 0
 
-	queue := make([]int, 1) // (biggerWidth*2)+(biggerHeight*2)-8
-	queue[0] = 0
+	// Go ahead and add the entire boarder of the farm to the queue
+	// TODO: DO EXPLORATION AS TO IF THIS HELPS ON LARGER BOARDS
+	queue := make([]int, (biggerWidth*2)+(biggerHeight*2)-4)
+	queueInc := 0
+
 	walkingSpaces := 0
+
+	firstUnsetTile := -1
 
 	// Building the new board...
 	for i := 0; i < biggerSize; i++ {
 		x, y := coordinatesFromIndex(biggerWidth, biggerHeight, i)
 		if x == 0 || x == width+1 || y == 0 || y == height+1 {
 			temp[i] = 'x'
+			queue[queueInc] = i
+			queueInc++
 		} else {
 			temp[i] = layout[indexFromCoordinates(width, x-1, y-1)]
 			if temp[i] == 'c' {
@@ -123,13 +130,61 @@ func validLayout(width int, height int, layout []byte) bool {
 			// Just go ahead and fill in everything as walkable
 			if temp[i] == '.' {
 				temp[i] = 'x'
+				if firstUnsetTile == -1 {
+					firstUnsetTile = i
+				}
 			}
 		}
 	}
 
+	// There is no way we can ever meet this goal.
 	if FARM_SIZE-walkingSpaces < MINIMUM_CROPS {
 		return false
 	}
+
+	if firstUnsetTile != -1 && temp[firstUnsetTile-1] == 'x' {
+		x, y := coordinatesFromIndex(biggerWidth, biggerHeight, firstUnsetTile-1)
+
+		// large enough to fit a 3x3
+		if x > 1 && y > 1 {
+			// if temp[indexFromCoordinates(biggerWidth, x-2, y-2)] != 'x' {
+			// 	goto THREE_BY_THREE_PASSED
+			// }
+
+			// if temp[indexFromCoordinates(biggerWidth, x-1, y-2)] != 'x' {
+			// 	goto THREE_BY_THREE_PASSED
+			// }
+
+			// if temp[indexFromCoordinates(biggerWidth, x, y-2)] != 'x' {
+			// 	goto THREE_BY_THREE_PASSED
+			// }
+
+			// if temp[indexFromCoordinates(biggerWidth, x-2, y-1)] != 'x' {
+			// 	goto THREE_BY_THREE_PASSED
+			// }
+
+			if temp[indexFromCoordinates(biggerWidth, x-1, y-1)] != 'x' {
+				goto THREE_BY_THREE_PASSED
+			}
+
+			if temp[indexFromCoordinates(biggerWidth, x, y-1)] != 'x' {
+				goto THREE_BY_THREE_PASSED
+			}
+
+			// if temp[indexFromCoordinates(biggerWidth, x-2, y)] != 'x' {
+			// 	goto THREE_BY_THREE_PASSED
+			// }
+
+			if temp[indexFromCoordinates(biggerWidth, x-1, y)] != 'x' {
+				goto THREE_BY_THREE_PASSED
+			}
+
+			return false
+
+		}
+
+	}
+THREE_BY_THREE_PASSED:
 
 	cropsWatered := 0
 
@@ -211,13 +266,15 @@ func expand(farm *Farm) []*Farm {
 			expansion := make([]*Farm, len(options))
 			added := 0
 
+			newLayout := make([]byte, FARM_SIZE)
+			copy(newLayout, farm.layout)
 			for _, option := range options {
-				newLayout := make([]byte, FARM_SIZE)
-				copy(newLayout, farm.layout)
 				newLayout[layoutIndex] = option
-				if layoutIndex < (FARM_WIDTH*2)+2 || validLayout(FARM_WIDTH, FARM_HEIGHT, newLayout) {
+				if validLayout(FARM_WIDTH, FARM_HEIGHT, newLayout) {
 					expansion[added] = NewFarm(farm.remainingResources, newLayout)
 					added++
+					newLayout = make([]byte, FARM_SIZE)
+					copy(newLayout, farm.layout)
 				}
 			}
 			return expansion[:added]
