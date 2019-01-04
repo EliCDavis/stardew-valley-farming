@@ -144,19 +144,6 @@ c c c c c c c
 
 From this we see that even if we know the optimal number of crops for any board, coming up with a valid configuration will still take way too much time on larger boards. Which warrants the need for better strategies to be implemented along with this.
 
-## Pruning bad sub-configurations
-
-2019/01/03 19:02:04 Search took 4m43.4358307s with 8 workers; chunking 5000
-2019/01/03 19:02:04 Explored 203492374 solutions2019/01/03 19:02:04 Total Crops: 37
-2019/01/03 19:02:04
-c c c x c c c
-c x x x x x c
-c c c c c c c
-c c c c c c c
-x x x x x x c
-c c c c c c c
-c c c c c c c
-
 ## Pruning based on uncovered regions
 
 If a region is every left wholy empty then it can be shown that it can always be optimized. For example if a configuration contains a 3x3 region that is always empty, then we can always improve it by placing a crop in the center
