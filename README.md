@@ -149,13 +149,13 @@ From this we see that even if we know the optimal number of crops for any board,
 If a region is every left wholy empty then it can be shown that it can always be optimized. For example if a configuration contains a 3x3 region that is always empty, then we can always improve it by placing a crop in the center
 
 ```
-x x x    should can be improved to    x x x
-x x x  ============================>  x c x
-x x x                                 x x x
+x x x   can be improved to    x x x
+x x x  ====================>  x c x
+x x x                         x x x
 
 ```
 
-I am making the assumption that this also applied to a 2x2 grid, but I can't prove it in my mind. However I have not seen a solution yet that ever contains a empty 2x2 grid in it. So I check to see if a grid every contains an empty 2x2 with no crops, and if it does then I prune it. Doing this reduced the 7x7 grid by 8 minutes (12 minutes to 4 minutes). But is far from what's needed if I want to start evaluating 8x8 grids.
+I am making the assumption that this also applied to a 2x2 grid, but I can't prove it in my mind. However I have not seen a solution yet that ever contains a empty 2x2 grid in it. So I check to see if a grid ever contains an empty 2x2 with no crops, and if it does then I prune it. Doing this reduced the 7x7 grid by 8 minutes (12 minutes to 4 minutes). But is far from what's needed if I want to start evaluating 8x8 grids.
 
 ```
 Search took 4m43.4358307s with 8 workers; chunking 5000
@@ -165,6 +165,24 @@ Total Crops: 37
 c c c x c c c
 c x x x x x c
 c c c c c c c
+c c c c c c c
+x x x x x x c
+c c c c c c c
+c c c c c c c
+```
+
+## Smaller optimizations
+
+I realized im doing a breath first search to determine if a board can be traversed by the player even if I just added an empty square. Since adding empty squares will always ensure the board is traversable, I stopped doing the BFS. I also stopped initializing some arrays every expansion and am keeping up with arrays long term. Doing these two things dropped the time for a 7x7 by a minutes, taking a total of 3m36s to compute now.
+
+```
+Search took 3m36.2419507s with 8 workers; chunking 5000
+Explored 203492374 solutions
+Total Crops: 37
+
+c c c c c c c
+c c x x x x x
+x c c c c c c
 c c c c c c c
 x x x x x x c
 c c c c c c c

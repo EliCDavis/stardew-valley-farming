@@ -91,13 +91,12 @@ func indexFromCoordinates(width int, x int, y int) int {
 	return (width * y) + x
 }
 
-func validLayout(width int, height int, layout []byte) bool {
+func validLayout(width int, height int, layout []byte, workingGrid []byte) bool {
 
 	// Create a bigger size for the player to walk a circle around the plot
 	biggerWidth := width + 2
 	biggerHeight := height + 2
 	biggerSize := biggerWidth * biggerHeight
-	temp := make([]byte, biggerSize)
 
 	cropsToWater := 0
 
@@ -114,22 +113,22 @@ func validLayout(width int, height int, layout []byte) bool {
 	for i := 0; i < biggerSize; i++ {
 		x, y := coordinatesFromIndex(biggerWidth, biggerHeight, i)
 		if x == 0 || x == width+1 || y == 0 || y == height+1 {
-			temp[i] = 'x'
+			workingGrid[i] = 'x'
 			queue[queueInc] = i
 			queueInc++
 		} else {
-			temp[i] = layout[indexFromCoordinates(width, x-1, y-1)]
-			if temp[i] == 'c' {
+			workingGrid[i] = layout[indexFromCoordinates(width, x-1, y-1)]
+			if workingGrid[i] == 'c' {
 				cropsToWater++
 			}
 
-			if temp[i] == 'x' {
+			if workingGrid[i] == 'x' {
 				walkingSpaces++
 			}
 
 			// Just go ahead and fill in everything as walkable
-			if temp[i] == '.' {
-				temp[i] = 'x'
+			if workingGrid[i] == '.' {
+				workingGrid[i] = 'x'
 				if firstUnsetTile == -1 {
 					firstUnsetTile = i
 				}
@@ -142,11 +141,11 @@ func validLayout(width int, height int, layout []byte) bool {
 		return false
 	}
 
-	if firstUnsetTile != -1 && temp[firstUnsetTile-1] == 'x' {
+	if firstUnsetTile != -1 && workingGrid[firstUnsetTile-1] == 'x' {
 		x, y := coordinatesFromIndex(biggerWidth, biggerHeight, firstUnsetTile-1)
 
 		// large enough to fit a 3x3
-		if x > 1 && y > 1 {
+		if x > 0 && y > 0 {
 			// if temp[indexFromCoordinates(biggerWidth, x-2, y-2)] != 'x' {
 			// 	goto THREE_BY_THREE_PASSED
 			// }
@@ -163,28 +162,27 @@ func validLayout(width int, height int, layout []byte) bool {
 			// 	goto THREE_BY_THREE_PASSED
 			// }
 
-			if temp[indexFromCoordinates(biggerWidth, x-1, y-1)] != 'x' {
-				goto THREE_BY_THREE_PASSED
+			if workingGrid[indexFromCoordinates(biggerWidth, x-1, y-1)] != 'x' {
+				return true
 			}
 
-			if temp[indexFromCoordinates(biggerWidth, x, y-1)] != 'x' {
-				goto THREE_BY_THREE_PASSED
+			if workingGrid[indexFromCoordinates(biggerWidth, x, y-1)] != 'x' {
+				return true
 			}
 
 			// if temp[indexFromCoordinates(biggerWidth, x-2, y)] != 'x' {
 			// 	goto THREE_BY_THREE_PASSED
 			// }
 
-			if temp[indexFromCoordinates(biggerWidth, x-1, y)] != 'x' {
-				goto THREE_BY_THREE_PASSED
+			if workingGrid[indexFromCoordinates(biggerWidth, x-1, y)] != 'x' {
+				return true
 			}
 
 			return false
-
 		}
 
+		return true
 	}
-THREE_BY_THREE_PASSED:
 
 	cropsWatered := 0
 
@@ -202,10 +200,10 @@ THREE_BY_THREE_PASSED:
 			// We have a left
 			if x > 0 {
 				otherIndex := indexFromCoordinates(biggerWidth, x-1, y)
-				if temp[otherIndex] == 'c' {
-					temp[otherIndex] = 'w'
+				if workingGrid[otherIndex] == 'c' {
+					workingGrid[otherIndex] = 'w'
 					cropsWatered++
-				} else if temp[otherIndex] == 'x' && visited[otherIndex] == false {
+				} else if workingGrid[otherIndex] == 'x' && visited[otherIndex] == false {
 					queue = append(queue, otherIndex)
 				}
 			}
@@ -213,10 +211,10 @@ THREE_BY_THREE_PASSED:
 			// We have a right
 			if x < biggerWidth-1 {
 				otherIndex := indexFromCoordinates(biggerWidth, x+1, y)
-				if temp[otherIndex] == 'c' {
-					temp[otherIndex] = 'w'
+				if workingGrid[otherIndex] == 'c' {
+					workingGrid[otherIndex] = 'w'
 					cropsWatered++
-				} else if temp[otherIndex] == 'x' && visited[otherIndex] == false {
+				} else if workingGrid[otherIndex] == 'x' && visited[otherIndex] == false {
 					queue = append(queue, otherIndex)
 				}
 			}
@@ -224,10 +222,10 @@ THREE_BY_THREE_PASSED:
 			// We have a bottom..?
 			if y > 0 {
 				otherIndex := indexFromCoordinates(biggerWidth, x, y-1)
-				if temp[otherIndex] == 'c' {
-					temp[otherIndex] = 'w'
+				if workingGrid[otherIndex] == 'c' {
+					workingGrid[otherIndex] = 'w'
 					cropsWatered++
-				} else if temp[otherIndex] == 'x' && visited[otherIndex] == false {
+				} else if workingGrid[otherIndex] == 'x' && visited[otherIndex] == false {
 					queue = append(queue, otherIndex)
 				}
 			}
@@ -235,10 +233,10 @@ THREE_BY_THREE_PASSED:
 			// We have a top..?
 			if y < biggerHeight-1 {
 				otherIndex := indexFromCoordinates(biggerWidth, x, y+1)
-				if temp[otherIndex] == 'c' {
-					temp[otherIndex] = 'w'
+				if workingGrid[otherIndex] == 'c' {
+					workingGrid[otherIndex] = 'w'
 					cropsWatered++
-				} else if temp[otherIndex] == 'x' && visited[otherIndex] == false {
+				} else if workingGrid[otherIndex] == 'x' && visited[otherIndex] == false {
 					queue = append(queue, otherIndex)
 				}
 			}
@@ -256,7 +254,7 @@ THREE_BY_THREE_PASSED:
 
 var basicOptions = []byte{'x', 'c'}
 
-func expand(farm *Farm) []*Farm {
+func expand(farm *Farm, workingGrid []byte) []*Farm {
 
 	for layoutIndex, layoutSelection := range farm.layout {
 
@@ -270,7 +268,7 @@ func expand(farm *Farm) []*Farm {
 			copy(newLayout, farm.layout)
 			for _, option := range options {
 				newLayout[layoutIndex] = option
-				if validLayout(FARM_WIDTH, FARM_HEIGHT, newLayout) {
+				if validLayout(FARM_WIDTH, FARM_HEIGHT, newLayout, workingGrid) {
 					expansion[added] = NewFarm(farm.remainingResources, newLayout)
 					added++
 					newLayout = make([]byte, FARM_SIZE)
@@ -285,10 +283,11 @@ func expand(farm *Farm) []*Farm {
 }
 
 func worker(id int, jobs <-chan []*Farm, results chan<- []*Farm) {
+	temp := make([]byte, (FARM_WIDTH+2)*(FARM_HEIGHT+2))
 	for j := range jobs {
 		r := make([]*Farm, 0)
 		for _, f := range j {
-			r = append(r, expand(f)...)
+			r = append(r, expand(f, temp)...)
 		}
 		results <- r
 	}
@@ -305,7 +304,7 @@ func main() {
 	start := time.Now()
 
 	jobs := make(chan []*Farm, 10000000)
-	jobs <- expand(farm)
+	jobs <- expand(farm, make([]byte, (FARM_WIDTH+2)*(FARM_HEIGHT+2)))
 	outstanding := 1
 
 	results := make(chan []*Farm, 100)
